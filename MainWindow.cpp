@@ -15,10 +15,8 @@ EVT_BUTTON(MainWindow::START_NODE_B, MainWindow::OnNodeSelected)
 EVT_BUTTON(MainWindow::END_NODE_B, MainWindow::OnNodeSelected)
 EVT_BUTTON(MainWindow::WALL_NODE_B, MainWindow::OnNodeSelected)
 EVT_LEFT_DOWN(MainWindow::OnLMBClick)
-// EVT_BUTTON(MainWindow::FIND_PATH_B, MainWindow::OnNodeSelected)
-// EVT_BUTTON(MainWindow::RESTART_B, MainWindow::OnNodeSelected)
-// TODO
-// EVT_LEFT_DOWN()
+EVT_BUTTON(MainWindow::FIND_PATH_B, MainWindow::OnStartPathfinding)
+EVT_BUTTON(MainWindow::RESTART_B, MainWindow::OnRestart)
 wxEND_EVENT_TABLE()
 
 
@@ -145,5 +143,18 @@ void MainWindow::OnLMBClick(wxMouseEvent& evt)
         this->Refresh(false);
         std::cout << "Click! on: " << n << std::endl;
     }
+    evt.Skip();
+}
+
+void MainWindow::OnStartPathfinding(wxCommandEvent& evt)
+{
+    //TODO
+    evt.Skip();
+}
+
+void MainWindow::OnRestart(wxCommandEvent& evt)
+{
+    // Just launch Refresh
+    RefreshCoordsTable();
     evt.Skip();
 }

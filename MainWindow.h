@@ -37,6 +37,8 @@ public:
     void OnLMBClick(wxMouseEvent& evt);
     //Get pressed button id and figure out what node was selected
     void OnNodeSelected(wxCommandEvent& evt);
+    void OnStartPathfinding(wxCommandEvent& evt);
+    void OnRestart(wxCommandEvent& evt);
 
 
 
