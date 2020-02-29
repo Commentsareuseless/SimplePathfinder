@@ -2,39 +2,22 @@
 #include "MainWindow.h"
 #include <math.h>
 
-PathFinder::PathFinder(const GridCoord& start, const GridCoord& goal) : Start(start), Goal(goal)
+PathFinder::PathFinder(GridCoord* start, GridCoord* goal) : Start(start), Goal(goal)
 {}
 
-//Let it return GridCoord obj with set costs
-void PathFinder::CalculateCost(const GridCoord& position)
-{
-    int toStartCost;
-    int toGoalCost;
-    int sumCost;
-
-    toStartCost = abs(Start.x - position.x) + abs(Start.y - position.y);
-    toGoalCost = abs(Goal.x - position.x) + abs(Goal.y - position.y); 
-    sumCost = toStartCost + toGoalCost;
-    
-    MainWindow::GetTile(position).SetCost(sumCost, toStartCost, toGoalCost);   
-}
-
-void PathFinder::CalculateCost(int x, int y)
-{
-    CalculateCost(GridCoord(x, y));
-}
 
 void PathFinder::FindWay()
 {
     wxPoint dirs[4] = {wxPoint(1,0), wxPoint(0,1), wxPoint(-1,0), wxPoint(0,-1)};
 
-    if(mToCheck.empty())
+    if(mChecked.empty())
     {
-        mToCheck.push(Start);
+        mChecked.push_back(Start);
     }
 
-    GridCoord current;    //Current position
-    for(size_t i = 0; current == Goal; ++i)
+    GridCoord current = *Start;    //Current position
+    current.CalculateCost(*Start, *Goal);
+    for(size_t i = 0; current == *Goal; ++i)
     {
         if (i > 40000000)
         {
@@ -43,26 +26,36 @@ void PathFinder::FindWay()
             break;
         }
         
-        current = mToCheck.front();
-        GridCoord next;
-        //Check tiles in all directions
+        size_t n = 0;
+        GridCoord *next = nullptr;
+        //Check nodes in all directions
         for (auto dir : dirs)
         {
             if(current.x + dir.x >= 0 && current.y + dir.y >= 0)
             {
-                //Change this func
-                CalculateCost(current.x + dir.x, current.y + current.y);
-                if (MainWindow::GetTile(current.x + dir.x, current.y + current.y).GetSumCost() > current.GetSumCost())
+                size_t xx = current.x + dir.x;
+                size_t yy = current.y + dir.y;
+                // Later change mToCheck queue to local var if it wouldnt be necessary
+                mToCheck.push(new GridCoord(xx,yy));
+                mToCheck.front()->SetParent(current);
+                mToCheck.front()->CalculateCost(*Start, *Goal);
+
+                if(current.GetSumCost() > mToCheck.front()->GetSumCost())
                 {
-                    current.SetCost()
-                    next = current;
+                    next = mToCheck.front();
                 }
-                
-                mChecked.push_back(wxPoint(current.x + dir.x, current.y + current.y));
+                else if(current.GetSumCost() == mToCheck.front()->GetSumCost())
+                {
+                    if(current.GetGoalCost() > mToCheck.front()->GetGoalCost())
+                    {
+                        next = mToCheck.front();
+                    }
+                }
+                mChecked.push_back(mToCheck.front());
+                delete mToCheck.front();
+                mToCheck.pop();
             }
         }
-        
-
-
+        current = *next;
     }
 }

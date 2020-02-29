@@ -27,8 +27,8 @@ private:
 public:
     MainWindow(const wxString& name);
     //Get reference to apropriate tile form mCoordTable
-    static GridCoord& GetTile(int x, int y);
-    static GridCoord& GetTile(const wxPoint& position); 
+    static GridCoord& GetNode(int x, int y);
+    static GridCoord& GetNode(const wxPoint& position); 
     //Set every tile to default colour
     void RefreshCoordsTable();
     void OnPaint(wxPaintEvent& evt);

@@ -7,15 +7,15 @@
 
 class PathFinder
 {
-    std::vector<wxPoint> mChecked;
-    std::queue<GridCoord> mToCheck;
-    GridCoord Start;
-    GridCoord Goal;
+    std::vector<GridCoord*> mChecked;
+    std::queue<GridCoord*> mToCheck;
+
+    GridCoord *neighbours[4];
+    GridCoord *Start = nullptr;
+    GridCoord *Goal = nullptr;
 
 public:
-    PathFinder(const GridCoord& start, const GridCoord& goal);
-    void CalculateCost(const GridCoord& position);
-    void CalculateCost(int x, int y);
+    PathFinder(GridCoord* start, GridCoord* goal);
     void FindWay();
 };
 #endif

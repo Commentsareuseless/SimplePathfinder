@@ -67,7 +67,7 @@ void MainWindow::RefreshCoordsTable()
     }
 }
 
-GridCoord& MainWindow::GetTile(int x, int y)
+GridCoord& MainWindow::GetNode(int x, int y)
 {
     if (mCoordsTable != nullptr)
     {
@@ -76,9 +76,9 @@ GridCoord& MainWindow::GetTile(int x, int y)
      //Kinda unlikely xD
 }
 
-GridCoord& MainWindow::GetTile(const wxPoint& position)
+GridCoord& MainWindow::GetNode(const wxPoint& position)
 {
-    return GetTile(position.x, position.y);
+    return GetNode(position.x, position.y);
 }
 
 void MainWindow::OnPaint(wxPaintEvent& evt)

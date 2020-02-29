@@ -19,20 +19,26 @@ public:
     };
 private:
     FieldType _type;
-    wxPoint parent; //for finding way backwards after reaching goal
+    wxPoint mParent; //for finding way backwards after reaching goal
     int sumCost = 0;
-    int toStartCost;
-    int toGoalCost;
+    int toStartCost = 0;
+    int toGoalCost = 0;
     static unsigned int Colors[7];
 public:
     GridCoord();
+    GridCoord(const GridCoord& pos);
     GridCoord(int x, int y);
-    void SetType(FieldType type);
+
+    void CalculateCost(const wxPoint& start, const wxPoint& goal);
+
+    void SetType(FieldType type) {_type = type;}
     void SetCost(int sum, int toStart = 0, int toGoal = 0);
-    FieldType GetType() const {return _type;}
+    void SetParent(const wxPoint& parent) {mParent = parent;}
+
     int GetSumCost() const {return sumCost;}
     int GetStartCost() const {return toStartCost;}
     int GetGoalCost() const {return toGoalCost;}
+    FieldType GetType() const {return _type;}
     unsigned int GetTypeColor() const;
 };
 #endif

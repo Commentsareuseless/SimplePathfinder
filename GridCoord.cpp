@@ -3,9 +3,14 @@
 unsigned int GridCoord::Colors[] = {0x8f8f8fU, 0xc948cd, 0xc948cd, 0x1, 0x1, 0x1, 0x1};
 
 GridCoord::GridCoord() : wxPoint(), _type(NORMAL) {}
+GridCoord::GridCoord(int x, int y) : wxPoint(x ,y) ,_type(NORMAL) {}
+GridCoord::GridCoord(const GridCoord& pos) : wxPoint(pos), _type(NORMAL) {}
 
-GridCoord::GridCoord(int x, int y) : wxPoint(x ,y) ,_type(NORMAL)
+void GridCoord::CalculateCost(const wxPoint& start, const wxPoint& goal)
 {
+    toStartCost = abs(start.x - this->x) + abs(start.y - this->y);
+    toGoalCost = abs(goal.x - this->x) + abs(goal.y - this->y); 
+    sumCost = toStartCost + toGoalCost;
 }
 
 unsigned int GridCoord::GetTypeColor() const
@@ -50,9 +55,4 @@ void GridCoord::SetCost(int sum, int toStart, int toGoal)
     sumCost = sum;
     toStartCost = toStart;
     toGoalCost = toGoal;
-}
-
-void GridCoord::SetType(FieldType type)
-{
-    _type = type;
 }
