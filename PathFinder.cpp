@@ -27,7 +27,7 @@ void PathFinder::FindWay()
         }
         
         size_t n = 0;
-        GridCoord *next = nullptr;
+        GridCoord *lowest = &current;
         //Check nodes in all directions
         for (auto dir : dirs)
         {
@@ -35,27 +35,58 @@ void PathFinder::FindWay()
             {
                 size_t xx = current.x + dir.x;
                 size_t yy = current.y + dir.y;
-                // Later change mToCheck queue to local var if it wouldnt be necessary
-                mToCheck.push(new GridCoord(xx,yy));
-                mToCheck.front()->SetParent(current);
-                mToCheck.front()->CalculateCost(*Start, *Goal);
-
-                if(current.GetSumCost() > mToCheck.front()->GetSumCost())
+                if(!ContainsNode(xx, yy))
                 {
-                    next = mToCheck.front();
+                    mToCheck.push_back(new GridCoord(xx,yy));
+                    mToCheck.back()->SetParent(current);
+                    mToCheck.back()->CalculateCost(*Start, *Goal);
+                    
+                    // Find the lowest cost coord
+                    lowest = CheckCostInList(mToCheck, lowest);
+                    lowest = CheckCostInList(mChecked, lowest);
                 }
-                else if(current.GetSumCost() == mToCheck.front()->GetSumCost())
-                {
-                    if(current.GetGoalCost() > mToCheck.front()->GetGoalCost())
-                    {
-                        next = mToCheck.front();
-                    }
-                }
-                mChecked.push_back(mToCheck.front());
-                delete mToCheck.front();
-                mToCheck.pop();
             }
         }
-        current = *next;
+        mChecked.push_back(lowest);
+        current = *lowest;
     }
+}
+
+GridCoord* PathFinder::CheckCostInList(std::vector<GridCoord*>& list, GridCoord* toCheck)
+{
+    GridCoord* result = toCheck;
+    size_t iter = 0;
+    for(size_t i = 0; i < list.size(); ++i)
+    {
+        if (list[i]->GetSumCost() < toCheck->GetSumCost())
+        {
+            result = list[i];
+            iter = i;
+        }
+        else if(list[i]->GetSumCost() == toCheck->GetSumCost())
+        {
+            (list[i]->GetGoalCost() < toCheck->GetGoalCost()) ? result = list[i] : result = toCheck;
+        }
+    }
+        delete list[iter];
+        list.erase(list.begin() + iter);
+        list.shrink_to_fit();
+        return result;
+}
+
+
+bool PathFinder::ContainsNode(int x, int y)
+{
+    for(auto coord : mChecked)
+    {
+        if(x == coord->x && y == coord->y)
+        {return true;}
+    }
+    return false;
+}
+
+PathFinder::~PathFinder()
+{
+    for(auto item : mToCheck) {delete item;}
+    for(auto item : mChecked) {delete item;}
 }
