@@ -3,11 +3,14 @@
 
 #include "wx/wx.h"
 #include "GridCoord.h"
+#include "PathFinder.h"
 
 class MainWindow : public wxFrame
 {
 private:
     static GridCoord *mCoordsTable;
+    GridCoord* mStart = nullptr;    //Quick ref to start and goal node not to iterate over
+    GridCoord* mGoal = nullptr;     //whole mCoordsTable
 
     wxToolBar *mNodeBar = nullptr;
     wxButton *mStartNode = nullptr;
@@ -20,15 +23,17 @@ private:
     unsigned long Colors[3];
     GridCoord::FieldType mSelectedNode;
     static int mSquaresNum;
-    int mGridOffset;
-    int mSqrWidth;
-    wxSize sqrSize;
+    static int mGridOffset;
+    static int mSqrWidth;
+    static wxSize sqrSize;
 
 public:
     MainWindow(const wxString& name);
     //Get reference to apropriate tile form mCoordTable
-    static GridCoord& GetNode(int x, int y);
-    static GridCoord& GetNode(const wxPoint& position); 
+    static GridCoord* GetNode(int x, int y);
+    static GridCoord* GetNode(const wxPoint& position); 
+    static int GetNodeWidth();
+    static int GetNodeOffset();
     //Set every tile to default colour
     void RefreshCoordsTable();
     void OnPaint(wxPaintEvent& evt);
@@ -40,8 +45,10 @@ public:
     void OnStartPathfinding(wxCommandEvent& evt);
     void OnRestart(wxCommandEvent& evt);
 
-
-
+    //Maybe todo but not very important
+    static bool ContainsNodeOfType(GridCoord::FieldType type);
+    static void ClearNodesOfType(GridCoord::FieldType type); //For clearing start and end nodes so there is only 1 on grid
+    
     enum IDs{
         // *_B == wxButton 
         unused = 10000,

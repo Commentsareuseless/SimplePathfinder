@@ -1,5 +1,5 @@
 WX_Libs = `wx-config --cxxflags --libs`
-objs = Launcher.o MainWindow.o GridCoord.o
+objs = Launcher.o MainWindow.o GridCoord.o  PathFinder.o
 
 
 AstPathFinder: ${objs}
@@ -13,6 +13,9 @@ Launcher.o: Launcher.h MainWindow.h
 
 MainWindow.o: MainWindow.h GridCoord.h
 	g++ MainWindow.cpp ${WX_Libs} -c
+
+PathFinder.o: PathFinder.h MainWindow.h GridCoord.h
+	g++ PathFinder.cpp ${WX_Libs} -c
 
 .PHONY : clean
 clean:
