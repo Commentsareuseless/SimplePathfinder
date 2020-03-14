@@ -1,121 +1,149 @@
 #include "PathFinder.h"
 #include "MainWindow.h"
-//#include <math.h>
+#include <map>
+#define MOVEMENT_COST 10
 
 PathFinder::PathFinder(GridCoord* start, GridCoord* goal) : Start(start), Goal(goal)
-{}
+{
+    wayBack[Start] = nullptr;
+    currentCost[Start] = 0;
+    mToCheck.push_back(Start);
+}
 
-void PathFinder::FindWay()
+bool PathFinder::FindWay()
 {
     if(Goal == nullptr || Start == nullptr)
     {
         std::cerr << "Start or Goal node doesn't exist\n";
-        return;
+        return false;
     }
-    int offs = MainWindow::GetNodeOffset();
     int wdth = MainWindow::GetNodeWidth();
-    int fact = offs + wdth;
-    wxPoint dirs[] = {wxPoint(wdth,0), wxPoint(0,wdth), wxPoint(-wdth,0), wxPoint(0,-wdth),
-                        wxPoint(wdth, wdth), wxPoint(-wdth, wdth), wxPoint(wdth, -wdth), wxPoint(-wdth, -wdth)};
+    wxPoint dirs[] = {wxPoint(wdth,0), wxPoint(0,wdth), wxPoint(-wdth,0), wxPoint(0,-wdth)
+                        /*,wxPoint(wdth, wdth), wxPoint(-wdth, wdth), wxPoint(wdth, -wdth), wxPoint(-wdth, -wdth)*/};
 
-    if(mChecked.empty())
-    {
-        mChecked.push_back(Start);
-    }
-
-    GridCoord* current = Start;    //Current position
-    current->CalculateCost(*Start, *Goal);
-    for(size_t i = 0; current != Goal; ++i)
-    {
-        if (i > 40000000)
-        {
-            std::cout << "Error!!!" << std::endl;   //Just in case xD
-            throw "OVERFLOWWWWW";                   //It should be exception i guess, let os deal wit it heh
-            break;
-        }
+    GridCoord* current;    //Current position
         
-        size_t n = 0;
-        //Lowest cost node
-        GridCoord *lowest = current;
+    current = CheckCostInList(mToCheck, current);
+    if(current == Goal) 
+    {
+        FindWayBack();
+        return true;
+    }
+        current->SetType(GridCoord::SCANED);
+
         std::cout << "-------------------\n";
         std::cout << "Current: " << current->x << " " << current->y << std::endl;
-        //Check nodes in all directions
+        //Check neighbour nodes in all directions
         for (auto dir : dirs)
         {
             if((current->x + dir.x >= 0) && (current->y + dir.y >= 0))
             { 
                 size_t xx = current->x + dir.x;
                 size_t yy = current->y + dir.y;
-                // if(MainWindow::GetNode(xx,yy)->GetType() == GridCoord::WALL)
-                //     {continue;}
-                std::cout << "xx= " << xx << "yy=" << yy << std::endl;
-                if(!ContainsNode(xx, yy))
-                {
-                    //A little unsafe but saves lots of memory
-                    mToCheck.push_back(MainWindow::GetNode(xx,yy));
-                    mToCheck.back()->SetParent(current);
-                    mToCheck.back()->CalculateCost(*Start, *Goal);
-                    mToCheck.back()->SetType(GridCoord::SCANING);
-                    std::cout << "Cost=" << current->GetSumCost() << "\n";
-                    std::cout << "Goal=" << current->GetGoalCost() << "\n";
-                    std::cout << "Start=" << current->GetStartCost() << "\n";
+                GridCoord* currNeighbour = MainWindow::GetNode(xx, yy);
+                if(currNeighbour->GetType() == GridCoord::WALL) 
+                    {continue;}
 
-                    // Find the lowest cost coord
-                    lowest = CheckCostInList(mToCheck, lowest);
-                    lowest = CheckCostInList(mChecked, lowest);
-                    std::cout << "Lowest cost tile: " << lowest->x << " " << lowest->y;
-                    std::cout << "\n---------------------\n";
+                int cost = currentCost.at(current) + MovementCost(dir);
+                if((currentCost.find(currNeighbour) == currentCost.end())
+                    || (cost < currentCost.at(currNeighbour)))
+                {
+                    currentCost[currNeighbour] = cost;
+                    currNeighbour->SetPrio(cost + CalcCostToGoal(currNeighbour));
+                    currNeighbour->SetType(GridCoord::SCANING);
+                    mToCheck.push_back(currNeighbour);
+                    wayBack[currNeighbour] = current;
                 }
+
             }
         }
-        lowest->SetType(GridCoord::SCANED);
-        mChecked.push_back(lowest);
-        current = lowest;
-        RemoveScanedNodes();
-    }
+        // std::cout << "Lowest cost tile: " << lowest->x << " " << lowest->y;
+        std::cout << "\n---------------------\n";
+        
+        return false;
 }
 
-GridCoord* PathFinder::CheckCostInList(std::vector<GridCoord*>& list, GridCoord* toCheck)
+GridCoord* PathFinder::CheckCostInList(std::vector<GridCoord*>& list, GridCoord* parent)
 {
-    GridCoord* result = toCheck;
+    GridCoord* result = list.back();
     size_t iter = 0;
-    for(size_t i = 0; i < list.size(); ++i)
+    for(size_t i = 0; i < list.size() - 1; ++i) //-1 bcs we assigned last element to result
     {
-        if (list[i]->GetSumCost() < toCheck->GetSumCost())
+        if (list[i]->GetPrio() <= result->GetPrio())
         {
             result = list[i];
             iter = i;
         }
-        else if(list[i]->GetSumCost() == toCheck->GetSumCost())
-        {
-            (list[i]->GetGoalCost() < toCheck->GetGoalCost()) ? (result = list[i]) : (result = toCheck);
-        }
+        // else if(list[i]->GetSumCost() == result->GetSumCost())
+        // {
+        //     (list[i]->GetGoalCost() < result->GetGoalCost()) ? (result = list[i]) : (result);
+        // }
     }
+
+    list.erase(list.begin() + iter);
     return result;
 }
 
-
-bool PathFinder::ContainsNode(int x, int y)
+void PathFinder::RemoveNode(GridCoord* node, std::vector<GridCoord*>& list)
 {
-    for(auto coord : mChecked)
+    for(int i(0); i < list.size(); i++)
     {
-        if((x == coord->x) && (y == coord->y))
-        {return true;}
+        if(node == list[i])
+        {
+            list.erase(list.begin() + i);
+            return;
+        }
+    }
+}
+
+bool PathFinder::ContainsNode(int x, int y, std::vector<GridCoord*>& list)
+{
+    for(auto coord : list)
+    {
+        if((x == coord->x) && (y == coord->y)) {return true;}
     }
     return false;
 }
 
-void PathFinder::RemoveScanedNodes()
+int PathFinder::CalcCostFromStart(GridCoord* curr)
 {
-    for(size_t n = 0; n < mToCheck.size(); n++)
-    {
-        if(mToCheck[n]->GetType() == GridCoord::SCANED)
-        {
-            mToCheck.erase(mToCheck.begin() + n);
-        }
-    }
-    mToCheck.shrink_to_fit();
+    int dx = abs(curr->x - Start->x) / MainWindow::GetNodeWidth();
+    int dy = abs(curr->y - Start->y) / MainWindow::GetNodeWidth();
+    return (dx + dy) * MOVEMENT_COST;
 }
+
+int PathFinder::CalcCostToGoal(GridCoord* curr)
+{
+    int dx = abs(curr->x - Goal->x) / MainWindow::GetNodeWidth();
+    int dy = abs(curr->y - Goal->y) / MainWindow::GetNodeWidth();
+    return (dx + dy) * MOVEMENT_COST;
+}
+
+int PathFinder::MovementCost(const wxPoint& neigh)
+{
+    //Check for diagonal nodes
+    return ((neigh.x == 0) || (neigh.y == 0)) ? (MOVEMENT_COST) : (MOVEMENT_COST * 1.4);
+}
+
+void PathFinder::FindWayBack()
+{
+    GridCoord* current = Goal;
+    int i(0);
+    while (current != Start)
+    {
+        if(current == nullptr)
+        {
+            std::cerr << "Error lul\n";
+            return;
+        }
+        std::cout << "Finding way bac!\n" << i << "\n" << current->x << " " << current->y << "\n";
+        current->SetType(GridCoord::PATH);
+        current = wayBack.at(current);
+        // current = current->GetParent();
+        ++i;
+    }
+}
+
 
 PathFinder::~PathFinder()
 {

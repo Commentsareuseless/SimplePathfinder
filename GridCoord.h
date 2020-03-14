@@ -20,10 +20,11 @@ public:
 private:
     FieldType _type;
     //for finding way backwards after reaching goal
-    GridCoord* mParent = nullptr;
+    // GridCoord* mParent = nullptr;
     int sumCost = 0;
-    int toStartCost = 0;
-    int toGoalCost = 0;
+    int priority = 0;
+    // int toStartCost = 0;
+    // int toGoalCost = 0;
     static unsigned int Colors[7];
 public:
     GridCoord();
@@ -34,12 +35,15 @@ public:
     void ResetToDfault();
 
     void SetType(FieldType type) {_type = type;}
-    void SetCost(int sum, int toStart = 0, int toGoal = 0);
-    void SetParent(GridCoord* parent) {mParent = parent;}
+    void SetCost(int sum/*, int toStart = 0, int toGoal = 0*/);
+    // void SetParent(GridCoord* parent) {mParent = parent;}
+    void SetPrio(int p) {priority = p;}
 
     int GetSumCost() const {return sumCost;}
-    int GetStartCost() const {return toStartCost;}
-    int GetGoalCost() const {return toGoalCost;}
+    int GetPrio() const {return priority;}
+    // int GetStartCost() const {return toStartCost;}
+    // int GetGoalCost() const {return toGoalCost;}
+    // GridCoord* GetParent() const {return mParent;}
     FieldType GetType() const {return _type;}
     unsigned int GetTypeColor() const;
 };

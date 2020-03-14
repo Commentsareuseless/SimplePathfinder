@@ -2,6 +2,7 @@
 #define PATH_FINDER_H
 #include <wx/wx.h>
 #include <vector>
+#include <unordered_map>
 #include "GridCoord.h"
 
 class PathFinder
@@ -15,15 +16,21 @@ class PathFinder
     GridCoord *Start = nullptr;
     GridCoord *Goal = nullptr;
 
-    bool ContainsNode(int x, int y);
-    //returns input arg if lower cost doesn't exist 
-    GridCoord* CheckCostInList(std::vector<GridCoord*>& list, GridCoord* toCheck);
+    std::unordered_map<GridCoord*, GridCoord*> wayBack;
+    std::unordered_map<GridCoord*, int> currentCost;
+
+    bool ContainsNode(int x, int y, std::vector<GridCoord*>& list);
+    int CalcCostFromStart(GridCoord* curr);
+    int CalcCostToGoal(GridCoord* curr);
+    // neigh must be relative to curr (Can't have absolute x and y)
+    int MovementCost(const wxPoint& neigh);
+    GridCoord* CheckCostInList(std::vector<GridCoord*>& list, GridCoord* parent);
+    void RemoveNode(GridCoord* node, std::vector<GridCoord*>& list);
     void FindWayBack();
-    void RemoveScanedNodes();
 public:
     PathFinder(GridCoord* start, GridCoord* goal);
     //Initialize pathfinding
-    void FindWay();
+    bool FindWay();
     virtual ~PathFinder();
 };
 #endif

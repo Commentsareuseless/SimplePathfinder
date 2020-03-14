@@ -21,6 +21,7 @@ EVT_BUTTON(MainWindow::WALL_NODE_B, MainWindow::OnNodeSelected)
 EVT_BUTTON(MainWindow::FIND_PATH_B, MainWindow::OnStartPathfinding)
 EVT_BUTTON(MainWindow::RESTART_B, MainWindow::OnRestart)
 EVT_LEFT_DOWN(MainWindow::OnLMBClick)
+EVT_TIMER(MainWindow::TIMER_T, MainWindow::OnTimer)
 wxEND_EVENT_TABLE()
 
 
@@ -178,10 +179,21 @@ void MainWindow::OnLMBClick(wxMouseEvent& evt)
 
 void MainWindow::OnStartPathfinding(wxCommandEvent& evt)
 {
-    PathFinder pathFinder(mStart, mGoal);
-    pathFinder.FindWay();
-    this->Refresh();
-    std::cout << "Finished!" << std::endl;
+    // RefreshCoordsTable();
+    if(isTimerOn)
+    {
+        mTimer->Stop();
+        delete pathFinder;
+        delete mTimer;
+        isTimerOn = false;
+    }
+    else
+    {
+        mTimer = new wxTimer(this, TIMER_T);
+        pathFinder = new PathFinder(mStart, mGoal);
+        mTimer->Start(10);
+        isTimerOn = true;
+    }
     evt.Skip();
 }
 
@@ -189,7 +201,24 @@ void MainWindow::OnRestart(wxCommandEvent& evt)
 {
     // Just launch Refresh
     RefreshCoordsTable();
+    mTimer->Stop();
+    delete pathFinder;
+    delete mTimer;
+    isTimerOn = false;
     this->Refresh(false);
+    evt.Skip();
+}
+
+void MainWindow::OnTimer(wxTimerEvent& evt)
+{
+    if(pathFinder->FindWay())
+    {
+        std::cout << "Finished!" << std::endl;
+        isTimerOn = false;
+        mTimer->Stop();
+        this->Refresh(false);
+    }
+    this->Refresh();
     evt.Skip();
 }
 

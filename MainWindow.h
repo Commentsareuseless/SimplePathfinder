@@ -27,6 +27,10 @@ private:
     static int mSqrWidth;
     static wxSize sqrSize;
 
+    wxTimer* mTimer = nullptr;
+    bool isTimerOn = false;
+    PathFinder* pathFinder = nullptr;
+
 public:
     MainWindow(const wxString& name);
     //Get reference to apropriate tile form mCoordTable
@@ -44,6 +48,7 @@ public:
     void OnNodeSelected(wxCommandEvent& evt);
     void OnStartPathfinding(wxCommandEvent& evt);
     void OnRestart(wxCommandEvent& evt);
+    void OnTimer(wxTimerEvent& evt);
 
     //Maybe todo but not very important
     static bool ContainsNodeOfType(GridCoord::FieldType type);
@@ -56,7 +61,8 @@ public:
         END_NODE_B,
         WALL_NODE_B,
         FIND_PATH_B,
-        RESTART_B
+        RESTART_B,
+        TIMER_T
     };
 
     wxDECLARE_EVENT_TABLE();

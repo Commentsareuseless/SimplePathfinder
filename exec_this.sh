@@ -3,4 +3,4 @@
 make clean
 echo Compiling...
 make
-./AstPathFinder
+./AstPathFinder.out
