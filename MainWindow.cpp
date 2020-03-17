@@ -8,15 +8,20 @@
 
 GridCoord* MainWindow::mCoordsTable = nullptr;
 int MainWindow::mSquaresNum = 40;
+int MainWindow::mGridOffset = 0;
+int MainWindow::mSqrWidth = 0;
+wxSize MainWindow::sqrSize = wxSize();
+
 
 wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 EVT_PAINT(MainWindow::OnPaint)
 EVT_BUTTON(MainWindow::START_NODE_B, MainWindow::OnNodeSelected)
 EVT_BUTTON(MainWindow::END_NODE_B, MainWindow::OnNodeSelected)
 EVT_BUTTON(MainWindow::WALL_NODE_B, MainWindow::OnNodeSelected)
-EVT_LEFT_DOWN(MainWindow::OnLMBClick)
 EVT_BUTTON(MainWindow::FIND_PATH_B, MainWindow::OnStartPathfinding)
 EVT_BUTTON(MainWindow::RESTART_B, MainWindow::OnRestart)
+EVT_LEFT_DOWN(MainWindow::OnLMBClick)
+EVT_TIMER(MainWindow::TIMER_T, MainWindow::OnTimer)
 wxEND_EVENT_TABLE()
 
 
@@ -38,11 +43,16 @@ MainWindow::MainWindow(const wxString& name) : wxFrame(nullptr, wxID_ANY, name, 
     mEndNode = new wxButton(mNodeBar, END_NODE_B, wxT("End"));
     mEndNode->SetBackgroundColour(Colors[1]);
     mWallNode = new wxButton(mNodeBar, WALL_NODE_B, wxT("Wall"));
+
+    mRestartMap = new wxButton(mNodeBar, RESTART_B, wxT("Restart"));
+    mFindPath = new wxButton(mNodeBar, FIND_PATH_B, wxT("Find path"));
     
     mNodeBar->AddControl(mStartNode, wxT("Start node"));
     mNodeBar->AddControl(mEndNode, wxT("End node"));
     mNodeBar->AddControl(mWallNode, wxT("Wall node"));
     mNodeBar->AddSeparator();
+    mNodeBar->AddControl(mFindPath, wxT("Find path"));
+    mNodeBar->AddControl(mRestartMap, wxT("Restart"));
     //Initialize table (Refresh but whatever)
     RefreshCoordsTable();
 }
@@ -65,20 +75,29 @@ void MainWindow::RefreshCoordsTable()
             mCoordsTable[n] = GridCoord(x * mSqrWidth + mGridOffset, y * mSqrWidth + mGridOffset);
         }
     }
+    std::cout << "Restarted" << std::endl;
 }
 
-GridCoord& MainWindow::GetTile(int x, int y)
+GridCoord* MainWindow::GetNode(int x, int y)
 {
-    if (mCoordsTable != nullptr)
-    {
-        return mCoordsTable[y * mSquaresNum + x];
-    }//TODO: implement some exceptions in case table doesnt exist
-     //Kinda unlikely xD
+    size_t n = ((y -  mGridOffset) / mSqrWidth) * mSquaresNum + (x - mGridOffset)/mSqrWidth;
+    std::cout << "Returned n= " << n << std::endl;
+    return &mCoordsTable[n];
 }
 
-GridCoord& MainWindow::GetTile(const wxPoint& position)
+GridCoord* MainWindow::GetNode(const wxPoint& position)
 {
-    return GetTile(position.x, position.y);
+    return GetNode(position.x, position.y);
+}
+
+int MainWindow::GetNodeWidth()
+{
+    return mSqrWidth;
+}
+
+int MainWindow::GetNodeOffset() 
+{
+    return mGridOffset;
 }
 
 void MainWindow::OnPaint(wxPaintEvent& evt)
@@ -130,7 +149,7 @@ void MainWindow::OnNodeSelected(wxCommandEvent& evt)
         mSelectedNode = GridCoord::ERROR;
         break;
     }
-    std::cout << "Selected: " << mSelectedNode << std::endl;
+    // std::cout << "Selected: " << mSelectedNode << std::endl;
 }
 
 void MainWindow::OnLMBClick(wxMouseEvent& evt)
@@ -139,16 +158,42 @@ void MainWindow::OnLMBClick(wxMouseEvent& evt)
     if(position.x < mSquaresNum*sqrSize.GetX() && position.y < mSquaresNum*sqrSize.GetY())
     {    
         int n = ((position.y - mGridOffset)/mSqrWidth) * mSquaresNum + (position.x - mGridOffset)/mSqrWidth;
+        if(mSelectedNode == GridCoord::START)
+        {
+            if (mStart != nullptr) mStart->ResetToDfault();
+            mStart = &mCoordsTable[n];
+            mStart->SetType(mSelectedNode);  
+        }
+        if(mSelectedNode == GridCoord::END)
+        {
+            if(mGoal != nullptr) mGoal->ResetToDfault();
+            mGoal = &mCoordsTable[n];
+            mGoal->SetType(mSelectedNode);  
+        }
         mCoordsTable[n].SetType(mSelectedNode);
         this->Refresh(false);
-        std::cout << "Click! on: " << n << std::endl;
+        std::cout << "Click! on: " << n << " " << mCoordsTable[n].x << " " << mCoordsTable[n].y << std::endl;
     }
     evt.Skip();
 }
 
 void MainWindow::OnStartPathfinding(wxCommandEvent& evt)
 {
-    //TODO
+    // RefreshCoordsTable();
+    if(isTimerOn)
+    {
+        mTimer->Stop();
+        delete pathFinder;
+        delete mTimer;
+        isTimerOn = false;
+    }
+    else
+    {
+        mTimer = new wxTimer(this, TIMER_T);
+        pathFinder = new PathFinder(mStart, mGoal);
+        mTimer->Start(10);
+        isTimerOn = true;
+    }
     evt.Skip();
 }
 
@@ -156,5 +201,24 @@ void MainWindow::OnRestart(wxCommandEvent& evt)
 {
     // Just launch Refresh
     RefreshCoordsTable();
+    mTimer->Stop();
+    delete pathFinder;
+    delete mTimer;
+    isTimerOn = false;
+    this->Refresh(false);
     evt.Skip();
 }
+
+void MainWindow::OnTimer(wxTimerEvent& evt)
+{
+    if(pathFinder->FindWay())
+    {
+        std::cout << "Finished!" << std::endl;
+        isTimerOn = false;
+        mTimer->Stop();
+        this->Refresh(false);
+    }
+    this->Refresh();
+    evt.Skip();
+}
+
